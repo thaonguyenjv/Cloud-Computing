@@ -1,0 +1,85 @@
+{% extends 'base_auth.html' %}
+{% block title %}Master Admin Dashboard{% endblock %}
+{% block content %}
+<div class="py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="fw-bold mb-0"> Trang Quản lý Shop</h4>
+    </div>
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-dark btn-sm">Đăng xuất</a>
+  </div>
+
+  <!-- Stats row -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm">
+        <div class="card-body py-3">
+          <div class="fs-2 fw-bold text-primary">{{ tenant_data|length }}</div>
+          <div class="text-muted small">Tổng số shop</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm">
+        <div class="card-body py-3">
+          <div class="fs-2 fw-bold text-success">
+            {{ tenant_data | sum(attribute='user_count') }}
+          </div>
+          <div class="text-muted small">Tổng số user</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tenant table -->
+  <div class="card shadow-sm">
+    <div class="card-header bg-dark text-white fw-bold">
+      <i class="bi bi-building"></i> Danh sách tất cả tenant
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Tên shop</th>
+            <th>Slug</th>
+            <th>Tax rate</th>
+            <th class="text-center">Số user</th>
+            <th>DB size</th>
+            <th>Ngày tạo</th>
+            <th class="text-center">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in tenant_data %}
+          <tr>
+            <td class="text-muted">{{ item.tenant.id }}</td>
+            <td class="fw-medium">{{ item.tenant.name }}</td>
+            <td><code>{{ item.tenant.slug }}</code></td>
+            <td>{{ (item.tenant.tax_rate * 100)|int }}%</td>
+            <td class="text-center">
+              <span class="badge bg-primary">{{ item.user_count }}</span>
+            </td>
+            <td class="text-muted small">{{ item.db_size }} KB</td>
+            <td class="text-muted small">
+              {{ item.tenant.created_at.strftime('%d/%m/%Y %H:%M') }}
+            </td>
+            <td class="text-center">
+              <form method="POST"
+                    action="{{ url_for('auth.masteradmin_delete_tenant', tenant_id=item.tenant.id) }}"
+                    onsubmit="return confirm('Xoá toàn bộ shop {{ item.tenant.name }}?')">
+                <button class="btn btn-outline-danger btn-sm">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

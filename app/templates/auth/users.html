@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Nhân viên{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h5 class="fw-bold mb-0"><i class="bi bi-people"></i> Nhân viên — {{ current_user.tenant.name }}</h5>
+  <a href="{{ url_for('auth.add_user') }}" class="btn btn-dark btn-sm">
+    <i class="bi bi-person-plus"></i> Thêm nhân viên
+  </a>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-hover bg-white rounded shadow-sm">
+    <thead class="table-dark">
+      <tr>
+        <th>Email</th>
+        <th>Vai trò</th>
+        <th>Ngày tạo</th>
+        <th class="text-center">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>
+          {{ u.email }}
+          {% if u.id == current_user.id %}
+            <span class="badge bg-primary ms-1">Bạn</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if u.role == 'admin' %}
+            <span class="badge bg-danger">Quản lý</span>
+          {% else %}
+            <span class="badge bg-secondary">Nhân viên</span>
+          {% endif %}
+        </td>
+        <td class="text-muted small">{{ u.created_at.strftime('%d/%m/%Y') }}</td>
+        <td class="text-center">
+          {% if u.id != current_user.id %}
+          <form method="POST"
+                action="{{ url_for('auth.delete_user', user_id=u.id) }}"
+                class="d-inline"
+                onsubmit="return confirm('Xoá nhân viên này?')">
+            <button class="btn btn-outline-danger btn-sm">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if current_user.role == 'admin' %}
+<hr class="mt-5">
+<div class="card border-danger">
+  <div class="card-body">
+    <h6 class="text-danger fw-bold"><i class="bi bi-exclamation-triangle"></i> Vùng nguy hiểm</h6>
+    <p class="text-muted small mb-3">Xoá toàn bộ shop, users và database. Không thể hoàn tác.</p>
+    <form method="POST"
+          action="{{ url_for('auth.delete_tenant') }}"
+          onsubmit="return confirm('XOÁ TOÀN BỘ SHOP? Hành động này không thể hoàn tác!')">
+      <button type="submit" class="btn btn-danger btn-sm">
+        <i class="bi bi-trash"></i> Xoá shop này
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

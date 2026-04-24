@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Lịch sử giao dịch{% endblock %}
+{% block content %}
+<h5 class="fw-bold mb-4"><i class="bi bi-receipt"></i> Lịch sử giao dịch</h5>
+
+{% if transactions %}
+<div class="table-responsive">
+  <table class="table table-hover bg-white shadow-sm rounded">
+    <thead class="table-dark">
+      <tr>
+        <th>#</th>
+        <th>Thời gian</th>
+        <th>Nhân viên</th>
+        <th class="text-end">Tạm tính</th>
+        <th class="text-end">Thuế</th>
+        <th class="text-end">Tổng</th>
+        <th class="text-center">Hoá đơn</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in transactions %}
+      <tr>
+        <td class="text-muted">#{{ t.id }}</td>
+        <td class="small">{{ t.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+        <td class="small">{{ t.user_email }}</td>
+        <td class="text-end">{{ '{:,.0f}'.format(t.subtotal) }}đ</td>
+        <td class="text-end text-muted small">{{ '{:,.0f}'.format(t.tax_amount) }}đ</td>
+        <td class="text-end fw-bold text-primary">{{ '{:,.0f}'.format(t.total) }}đ</td>
+        <td class="text-center">
+          <a href="{{ url_for('transactions.transaction_detail', transaction_id=t.id) }}"
+             class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-eye"></i>
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+  <i class="bi bi-receipt" style="font-size:3rem"></i>
+  <p class="mt-2">Chưa có giao dịch nào.</p>
+</div>
+{% endif %}
+{% endblock %}

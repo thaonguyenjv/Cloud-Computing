@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:20px">
+  <h2 style="color:#212529">{{ tenant_name }}</h2>
+  <p style="color:#6c757d">Hoá đơn #{{ transaction.id }} — {{ transaction.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+  <hr>
+  <table width="100%" cellpadding="6" style="border-collapse:collapse">
+    <thead>
+      <tr style="background:#212529;color:#fff">
+        <th align="left">Sản phẩm</th>
+        <th align="center">SL</th>
+        <th align="right">Thành tiền</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in item_list %}
+      <tr style="border-bottom:1px solid #dee2e6">
+        <td>{{ item.product.name }}</td>
+        <td align="center">{{ item.qty }}</td>
+        <td align="right">{{ '{:,.0f}'.format(item.subtotal) }}đ</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <hr>
+  <table width="100%">
+    <tr><td>Tạm tính</td><td align="right">{{ '{:,.0f}'.format(transaction.subtotal) }}đ</td></tr>
+    <tr><td>Thuế ({{ (transaction.tax_rate * 100)|int }}%)</td>
+        <td align="right">{{ '{:,.0f}'.format(transaction.tax_amount) }}đ</td></tr>
+    <tr style="font-size:1.2em;font-weight:bold">
+      <td>Tổng cộng</td>
+      <td align="right" style="color:#0d6efd">{{ '{:,.0f}'.format(transaction.total) }}đ</td>
+    </tr>
+  </table>
+  <p style="color:#6c757d;font-size:12px;margin-top:20px">Cảm ơn bạn đã mua hàng!</p>
+</body>
+</html>

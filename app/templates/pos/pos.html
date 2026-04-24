@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% block title %}Bán hàng{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <div class="col-md-7">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0"><i class="bi bi-grid"></i> Sản phẩm</h5>
+      <input type="text" id="search" class="form-control form-control-sm w-50"
+             placeholder="Tìm sản phẩm...">
+    </div>
+
+    {% set categories = products | map(attribute='category') | unique | list %}
+    {% for cat in categories %}
+    <div class="mb-3">
+      <div class="text-muted small fw-bold mb-2 text-uppercase">
+        {{ cat or 'Khác' }}
+      </div>
+      <div class="row g-2">
+        {% for p in products if p.category == cat %}
+        <div class="col-6 col-md-4 product-item" data-name="{{ p.name|lower }}">
+          <div class="card h-100 border"
+               style="cursor:pointer"
+               data-id="{{ p.id }}"
+               data-name="{{ p.name }}"
+               data-price="{{ p.price }}"
+               onclick="addToCart(this.dataset.id, this.dataset.name, this.dataset.price)">
+            <div class="card-body p-2 text-center">
+              <div class="fw-medium small">{{ p.name }}</div>
+              <div class="text-primary fw-bold">{{ '{:,.0f}'.format(p.price) }}đ</div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    {% if not products %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-box-seam" style="font-size:3rem"></i>
+      <p class="mt-2">Chưa có sản phẩm. <a href="{{ url_for('product.add_product') }}">Thêm ngay</a></p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="col-md-5">
+    <div class="card shadow-sm sticky-top" style="top: 20px">
+      <div class="card-header bg-dark text-white fw-bold">
+        <i class="bi bi-cart3"></i> Đơn hàng
+      </div>
+      <div class="card-body p-0">
+        <div id="cart-items" style="min-height:120px; max-height:320px; overflow-y:auto">
+          <div id="cart-empty" class="text-center text-muted py-4">
+            <i class="bi bi-cart" style="font-size:2rem"></i>
+            <p class="mt-1 small">Chưa có sản phẩm</p>
+          </div>
+        </div>
+
+        <hr class="my-0">
+
+        <div class="p-3">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="text-muted">Tạm tính</span>
+            <span id="subtotal">0đ</span>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            <span class="text-muted">Thuế ({{ (tax_rate * 100)|int }}%)</span>
+            <span id="tax">0đ</span>
+          </div>
+          <div class="d-flex justify-content-between fw-bold fs-5 mt-2">
+            <span>Tổng cộng</span>
+            <span id="total" class="text-primary">0đ</span>
+          </div>
+        </div>
+
+        <hr class="my-0">
+
+        <div class="px-3 pt-2 pb-1">
+          <input type="email" id="customer-email" class="form-control form-control-sm"
+                 placeholder="Email khách (tuỳ chọn — để gửi hoá đơn)">
+        </div>
+
+        <div class="p-3 d-flex gap-2">
+          <button class="btn btn-outline-secondary btn-sm" onclick="clearCart()">
+            <i class="bi bi-trash"></i> Xoá
+          </button>
+          <button class="btn btn-success flex-fill fw-bold" onclick="checkout()">
+            <i class="bi bi-check-circle"></i> Thanh toán
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal receipt -->
+<div class="modal fade" id="receiptModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title"><i class="bi bi-check-circle"></i> Thanh toán thành công!</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="receipt-content"></div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal" onclick="clearCart()">
+          Đơn mới
+        </button>
+        <a id="receipt-link" href="#" class="btn btn-dark" target="_blank">
+          <i class="bi bi-printer"></i> Xem hoá đơn
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="config" data-tax="{{ tax_rate }}"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const TAX_RATE = parseFloat(document.getElementById('config').dataset.tax);
+let cart = {};
+
+function fmt(n) {
+  return Number(n).toLocaleString('vi-VN') + 'đ';
+}
+
+function addToCart(id, name, price) {
+  id    = String(id);
+  price = parseFloat(price);
+  if (cart[id]) {
+    cart[id].qty += 1;
+  } else {
+    cart[id] = { id, name, price, qty: 1 };
+  }
+  renderCart();
+}
+
+function changeQty(id, delta) {
+  if (!cart[id]) return;
+  cart[id].qty += delta;
+  if (cart[id].qty <= 0) delete cart[id];
+  renderCart();
+}
+
+function clearCart() {
+  cart = {};
+  renderCart();
+}
+
+function renderCart() {
+  const container = document.getElementById('cart-items');
+  const items     = Object.values(cart);
+
+  if (items.length === 0) {
+    container.innerHTML = `
+      <div class="text-center text-muted py-4">
+        <i class="bi bi-cart" style="font-size:2rem"></i>
+        <p class="mt-1 small">Chưa có sản phẩm</p>
+      </div>`;
+    document.getElementById('subtotal').textContent = '0đ';
+    document.getElementById('tax').textContent      = '0đ';
+    document.getElementById('total').textContent    = '0đ';
+    return;
+  }
+
+  let subtotal = 0;
+  let html     = '';
+
+  items.forEach(item => {
+    const line = item.price * item.qty;
+    subtotal  += line;
+    html += `
+      <div class="d-flex align-items-center px-3 py-2 border-bottom">
+        <div class="flex-fill">
+          <div class="small fw-medium">${item.name}</div>
+          <div class="text-muted small">${fmt(item.price)} x ${item.qty}</div>
+        </div>
+        <div class="d-flex align-items-center gap-1">
+          <button class="btn btn-sm btn-outline-secondary py-0 px-1"
+                  onclick="changeQty('${item.id}', -1)">−</button>
+          <span class="small fw-bold">${item.qty}</span>
+          <button class="btn btn-sm btn-outline-secondary py-0 px-1"
+                  onclick="changeQty('${item.id}', 1)">+</button>
+        </div>
+        <div class="ms-2 fw-bold small text-primary" style="min-width:70px;text-align:right">
+          ${fmt(line)}
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+
+  const tax   = Math.round(subtotal * TAX_RATE);
+  const total = subtotal + tax;
+
+  document.getElementById('subtotal').textContent = fmt(subtotal);
+  document.getElementById('tax').textContent      = fmt(tax);
+  document.getElementById('total').textContent    = fmt(total);
+}
+
+function checkout() {
+  const items = Object.values(cart).map(i => ({ id: i.id, qty: i.qty }));
+  if (items.length === 0) {
+    alert('Giỏ hàng trống!');
+    return;
+  }
+
+  const customerEmail = document.getElementById('customer-email').value;
+
+  fetch('/pos/checkout', {
+    method : 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body   : JSON.stringify({ items, customer_email: customerEmail })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById('receipt-content').innerHTML = `
+        <table class="table table-sm">
+          <tr><td class="text-muted">Mã đơn</td><td class="fw-bold">#${data.transaction_id}</td></tr>
+          <tr><td class="text-muted">Tạm tính</td><td>${fmt(data.subtotal)}</td></tr>
+          <tr><td class="text-muted">Thuế</td><td>${fmt(data.tax_amount)}</td></tr>
+          <tr><td class="text-muted fw-bold">Tổng cộng</td>
+              <td class="fw-bold text-primary fs-5">${fmt(data.total)}</td></tr>
+        </table>`;
+      document.getElementById('receipt-link').href = '/transactions/' + data.transaction_id;
+      new bootstrap.Modal(document.getElementById('receiptModal')).show();
+    } else {
+      alert(data.message);
+    }
+  })
+  .catch(() => alert('Lỗi kết nối!'));
+}
+
+document.getElementById('search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.product-item').forEach(el => {
+    el.style.display = el.dataset.name.includes(q) ? '' : 'none';
+  });
+});
+</script>
+{% endblock %}
