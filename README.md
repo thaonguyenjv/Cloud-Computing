@@ -1,7 +1,8 @@
 # 🏪 SaaS Point-of-Sale (PoS) Application
 
 A multi-tenant web-based Point-of-Sale system built with Flask.
-
+Demo:  https://cloud-computing-production-1636.up.railway.app
+> ⚠️ **Note:** Demo hosted on Railway free trial (expires ~24/5/2026)
 ---
 
 ## 🛠 Tech Stack
@@ -40,6 +41,7 @@ Cloud-Computing/
 ├── run.py
 ├── requirements.txt
 ├── Procfile
+├── railway.toml
 └── .env
 ```
 
@@ -61,7 +63,7 @@ source venv/bin/activate    # Mac/Linux
 pip install -r requirements.txt
 
 # 4. Create .env file
-SECRET_KEY=your-secret-key
+SECRET_KEY=your-super-secret-key-here
 DATABASE_URL=postgresql://...
 MAIL_USERNAME=youremail@gmail.com
 MAIL_PASSWORD=your-app-password
