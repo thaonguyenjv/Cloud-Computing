@@ -180,7 +180,7 @@ def send_receipt_email(transaction_id, item_list, subtotal,
             'Content-Type': 'application/json'
         },
         json={
-            'sender'     : {'name': tenant_name, 'email': 'noreply@pos-saas.com'},
+            'sender'     : {'name': tenant_name, 'email': 'nntnguyen1885@gmail.com'},
             'to'         : [{'email': to_email}],
             'subject'    : f'Hoá đơn #{transaction_id} — {tenant_name}',
             'htmlContent': html_body
