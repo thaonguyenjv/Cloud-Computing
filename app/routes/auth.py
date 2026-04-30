@@ -135,10 +135,33 @@ def delete_tenant():
         flash('Không có quyền.', 'danger')
         return redirect(url_for('transactions.pos_page'))
 
+    from app.models import Transaction, TransactionItem
     tenant = current_user.tenant
-    User.query.filter_by(tenant_id=tenant.id).delete()
+
+    # Lấy tất cả transaction của tenant này
+    transactions = Transaction.query.filter_by(tenant_id=tenant.id).all()
+    transaction_ids = [t.id for t in transactions]
+
+    # 1. Xóa transaction_items trước 
+    if transaction_ids:
+        TransactionItem.query.filter(
+            TransactionItem.transaction_id.in_(transaction_ids)
+        ).delete(synchronize_session=False)
+
+    # 2. Xóa transactions (con)
+    Transaction.query.filter_by(tenant_id=tenant.id).delete(synchronize_session=False)
+
+    # 3. Xóa products
+    from app.models import Product
+    Product.query.filter_by(tenant_id=tenant.id).delete(synchronize_session=False)
+
+    # 4. Xóa users
+    User.query.filter_by(tenant_id=tenant.id).delete(synchronize_session=False)
+
+    # 5. Xóa tenant
     db.session.delete(tenant)
     db.session.commit()
+
     logout_user()
     flash('Đã xoá shop thành công.', 'success')
     return redirect(url_for('auth.login'))
@@ -169,8 +192,20 @@ def masteradmin_delete_tenant(tenant_id):
         flash('Không có quyền.', 'danger')
         return redirect(url_for('auth.masteradmin_dashboard'))
 
+    from app.models import Transaction, TransactionItem, Product
     tenant = Tenant.query.get_or_404(tenant_id)
-    User.query.filter_by(tenant_id=tenant.id).delete()
+
+    transactions = Transaction.query.filter_by(tenant_id=tenant.id).all()
+    transaction_ids = [t.id for t in transactions]
+
+    if transaction_ids:
+        TransactionItem.query.filter(
+            TransactionItem.transaction_id.in_(transaction_ids)
+        ).delete(synchronize_session=False)
+
+    Transaction.query.filter_by(tenant_id=tenant.id).delete(synchronize_session=False)
+    Product.query.filter_by(tenant_id=tenant.id).delete(synchronize_session=False)
+    User.query.filter_by(tenant_id=tenant.id).delete(synchronize_session=False)
     db.session.delete(tenant)
     db.session.commit()
 

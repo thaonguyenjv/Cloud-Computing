@@ -226,7 +226,7 @@ function checkout() {
           <tr><td class="text-muted fw-bold">Tổng cộng</td>
               <td class="fw-bold text-primary fs-5">${fmt(data.total)}</td></tr>
         </table>`;
-      document.getElementById('receipt-link').href = '/transactions/' + data.transaction_id;
+      window.location.href = '/transactions/' + data.transaction_id;
       new bootstrap.Modal(document.getElementById('receiptModal')).show();
     } else {
       alert(data.message);
