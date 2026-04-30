@@ -225,8 +225,12 @@ function checkout() {
           <tr><td class="text-muted">Thuế</td><td>${fmt(data.tax_amount)}</td></tr>
           <tr><td class="text-muted fw-bold">Tổng cộng</td>
               <td class="fw-bold text-primary fs-5">${fmt(data.total)}</td></tr>
+          ${data.email_sent
+            ? `<tr><td colspan="2" class="text-success small"><i class="bi bi-envelope-check"></i> Đã gửi hoá đơn qua email</td></tr>`
+            : ''}
         </table>`;
-      window.location.href = '/transactions/' + data.transaction_id;
+
+      document.getElementById('receipt-link').href = '/transactions/' + data.transaction_id;
       new bootstrap.Modal(document.getElementById('receiptModal')).show();
     } else {
       alert(data.message);
