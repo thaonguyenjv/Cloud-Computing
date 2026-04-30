@@ -128,8 +128,7 @@ def transaction_detail(transaction_id):
 
 def send_receipt_email(transaction_id, item_list, subtotal,
                        tax_amount, tax_rate, total, to_email, tenant_name):
-    from app import mail
-    from flask_mail import Message
+    import requests
     from flask import current_app
 
     items_html = ''
@@ -138,20 +137,17 @@ def send_receipt_email(transaction_id, item_list, subtotal,
         <tr>
           <td style="padding:8px;border-bottom:1px solid #eee">{item['name']}</td>
           <td style="padding:8px;border-bottom:1px solid #eee;text-align:center">{item['qty']}</td>
-          <td style="padding:8px;border-bottom:1px solid #eee;text-align:right">
-            {'{:,.0f}'.format(item['unit_price'])}đ</td>
-          <td style="padding:8px;border-bottom:1px solid #eee;text-align:right">
-            {'{:,.0f}'.format(item['subtotal'])}đ</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;text-align:right">{'{:,.0f}'.format(item['unit_price'])}đ</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;text-align:right">{'{:,.0f}'.format(item['subtotal'])}đ</td>
         </tr>"""
 
-    tax_pct   = int(tax_rate * 100)
+    tax_pct = int(tax_rate * 100)
     html_body = f"""
     <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px">
       <h2 style="color:#212529;margin-bottom:4px">{tenant_name}</h2>
-      <p style="color:#6c757d;margin-top:0">Hoá đơn #{transaction_id}</p>
+      <p style="color:#6c757d">Hoá đơn #{transaction_id}</p>
       <hr style="border:none;border-top:1px solid #dee2e6">
-      <table width="100%" cellpadding="0" cellspacing="0"
-             style="border-collapse:collapse;margin-bottom:16px">
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:16px">
         <thead>
           <tr style="background:#212529;color:#fff">
             <th style="padding:10px;text-align:left">Sản phẩm</th>
@@ -162,31 +158,36 @@ def send_receipt_email(transaction_id, item_list, subtotal,
         </thead>
         <tbody>{items_html}</tbody>
       </table>
-      <table width="100%" cellpadding="4" cellspacing="0">
-        <tr>
-          <td style="color:#6c757d">Tạm tính</td>
-          <td style="text-align:right">{'{:,.0f}'.format(subtotal)}đ</td>
-        </tr>
-        <tr>
-          <td style="color:#6c757d">Thuế ({tax_pct}%)</td>
-          <td style="text-align:right">{'{:,.0f}'.format(tax_amount)}đ</td>
-        </tr>
+      <table width="100%" cellpadding="4">
+        <tr><td style="color:#6c757d">Tạm tính</td>
+            <td style="text-align:right">{'{:,.0f}'.format(subtotal)}đ</td></tr>
+        <tr><td style="color:#6c757d">Thuế ({tax_pct}%)</td>
+            <td style="text-align:right">{'{:,.0f}'.format(tax_amount)}đ</td></tr>
         <tr style="font-size:18px;font-weight:bold;color:#0d6efd">
           <td style="padding-top:8px">Tổng cộng</td>
           <td style="text-align:right;padding-top:8px">{'{:,.0f}'.format(total)}đ</td>
         </tr>
       </table>
-      <hr style="border:none;border-top:1px solid #dee2e6;margin-top:16px">
-      <p style="color:#6c757d;font-size:12px;text-align:center">
+      <p style="color:#6c757d;font-size:12px;text-align:center;margin-top:16px">
         Cảm ơn bạn đã mua hàng tại {tenant_name}!
       </p>
     </div>"""
 
-    msg = Message(
-        subject    = f'Hoá đơn #{transaction_id} — {tenant_name}',
-        recipients = [to_email],
-        html       = html_body,
-        sender     = current_app.config['MAIL_USERNAME']
+    response = requests.post(
+        'https://api.brevo.com/v3/smtp/email',
+        headers={
+            'api-key': current_app.config['BREVO_API_KEY'],
+            'Content-Type': 'application/json'
+        },
+        json={
+            'sender'     : {'name': tenant_name, 'email': 'noreply@pos-saas.com'},
+            'to'         : [{'email': to_email}],
+            'subject'    : f'Hoá đơn #{transaction_id} — {tenant_name}',
+            'htmlContent': html_body
+        }
     )
-    mail.send(msg)
-    print(f"[EMAIL] Sent to {to_email} ✓")
+
+    if response.status_code not in (200, 201):
+        raise Exception(f'Brevo API error: {response.text}')
+
+    print(f'[EMAIL] Sent to {to_email}  ✓')
