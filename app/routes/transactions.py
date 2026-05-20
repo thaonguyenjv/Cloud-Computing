@@ -72,6 +72,16 @@ def checkout():
         ))
 
     db.session.commit()
+    # Lưu receipt lên S3
+    try:
+        save_receipt_to_s3(
+            transaction_id = transaction.id,
+            tenant_name    = current_user.tenant.name,
+            item_list      = item_list,
+            total          = total
+        )
+    except Exception as e:
+        print(f'[S3 ERROR] {e}')
 
     email_sent = False
     if customer_email:
@@ -128,7 +138,8 @@ def transaction_detail(transaction_id):
 
 def send_receipt_email(transaction_id, item_list, subtotal,
                        tax_amount, tax_rate, total, to_email, tenant_name):
-    import requests
+    from app import mail
+    from flask_mail import Message
     from flask import current_app
 
     items_html = ''
@@ -173,21 +184,33 @@ def send_receipt_email(transaction_id, item_list, subtotal,
       </p>
     </div>"""
 
-    response = requests.post(
-        'https://api.brevo.com/v3/smtp/email',
-        headers={
-            'api-key': current_app.config['BREVO_API_KEY'],
-            'Content-Type': 'application/json'
-        },
-        json={
-            'sender'     : {'name': tenant_name, 'email': 'nntnguyen1885@gmail.com'},
-            'to'         : [{'email': to_email}],
-            'subject'    : f'Hoá đơn #{transaction_id} — {tenant_name}',
-            'htmlContent': html_body
-        }
+    sender = current_app.config['MAIL_USERNAME']
+    msg = Message(
+        subject    = f'Hoá đơn #{transaction_id} — {tenant_name}',
+        recipients = [to_email],
+        html       = html_body,
+        sender     = sender
     )
+    mail.send(msg)
+    print(f'[EMAIL] Sent to {to_email} via AWS SES ✓')
 
-    if response.status_code not in (200, 201):
-        raise Exception(f'Brevo API error: {response.text}')
+def save_receipt_to_s3(transaction_id, tenant_name, item_list, total):
+    import boto3, json
+    from flask import current_app
 
-    print(f'[EMAIL] Sent to {to_email}  ✓')
+    s3 = boto3.client('s3', region_name=current_app.config['AWS_REGION'])
+
+    receipt_data = {
+        'transaction_id': transaction_id,
+        'tenant'        : tenant_name,
+        'items'         : item_list,
+        'total'         : total,
+    }
+
+    s3.put_object(
+        Bucket      = current_app.config['S3_BUCKET'],
+        Key         = f'receipts/{tenant_name}/{transaction_id}.json',
+        Body        = json.dumps(receipt_data, ensure_ascii=False),
+        ContentType = 'application/json'
+    )
+    print(f'[S3] Saved: receipts/{tenant_name}/{transaction_id}.json')
