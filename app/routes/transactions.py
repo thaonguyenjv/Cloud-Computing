@@ -138,8 +138,7 @@ def transaction_detail(transaction_id):
 
 def send_receipt_email(transaction_id, item_list, subtotal,
                        tax_amount, tax_rate, total, to_email, tenant_name):
-    from app import mail
-    from flask_mail import Message
+    import requests
     from flask import current_app
 
     items_html = ''
@@ -184,15 +183,24 @@ def send_receipt_email(transaction_id, item_list, subtotal,
       </p>
     </div>"""
 
-    sender = current_app.config['MAIL_USERNAME']
-    msg = Message(
-        subject    = f'Hoá đơn #{transaction_id} — {tenant_name}',
-        recipients = [to_email],
-        html       = html_body,
-        sender     = sender
+    response = requests.post(
+        'https://api.brevo.com/v3/smtp/email',
+        headers={
+            'api-key': current_app.config['BREVO_API_KEY'],
+            'Content-Type': 'application/json'
+        },
+        json={
+            'sender'     : {'name': tenant_name, 'email': 'nntnguyen1885@gmail.com'},
+            'to'         : [{'email': to_email}],
+            'subject'    : f'Hoá đơn #{transaction_id} — {tenant_name}',
+            'htmlContent': html_body
+        }
     )
-    mail.send(msg)
-    print(f'[EMAIL] Sent to {to_email} via AWS SES ✓')
+
+    if response.status_code not in (200, 201):
+        raise Exception(f'Brevo API error: {response.text}')
+
+    print(f'[EMAIL] Sent to {to_email} via Brevo ✓')
 
 def save_receipt_to_s3(transaction_id, tenant_name, item_list, total):
     import boto3, json

@@ -23,6 +23,9 @@ class Config:
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
 
+    # Brevo API
+    BREVO_API_KEY = os.environ.get('BREVO_API_KEY')
+
     # S3
     S3_BUCKET = os.environ.get('S3_BUCKET', 'pos-s3-receipt-g8')
     AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
