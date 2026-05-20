@@ -1,21 +1,30 @@
 # 🏪 SaaS Point-of-Sale (PoS) Application
 
 A multi-tenant web-based Point-of-Sale system built with Flask.
-Demo:  https://cloud-computing-production-1636.up.railway.app
-> ⚠️ **Note:** Demo hosted on Railway free trial (expires ~24/5/2026)
+Demo (AWS): http://44.204.225.2
 ---
 
 ## 🛠 Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Backend | Python 3.11 + Flask |
-| Database | PostgreSQL (Railway) |
+| Backend | Python 3.14 + Flask |
+| Database | PostgreSQL (AWS RDS) |
 | ORM | Flask-SQLAlchemy |
 | Authentication | Flask-Login |
-| Email | Flask-Mail + Gmail SMTP |
+| Email | Brevo API |
+| Storage | AWS S3 |
 | Frontend | HTML5 + Bootstrap 5 + Vanilla JS |
-| Deployment | Railway |
+| Deployment | AWS EC2 (t3.micro) |
+| Networking | AWS VPC + Security Groups |
+
+**AWS Services used:**
+- **EC2** — Application server (Ubuntu 24.04, t3.micro)
+- **RDS** — PostgreSQL database (db.t4g.micro, private subnet)
+- **S3** — Receipt storage 
+- **VPC** — Isolated network 
+- **IAM** — Role-based access control
+- **CloudWatch** — Monitoring and logs
 
 ---
 
@@ -43,33 +52,6 @@ Cloud-Computing/
 ├── Procfile
 ├── railway.toml
 └── .env
-```
-
----
-
-## 🚀 Getting Started
-
-```bash
-# 1. Clone repository
-git clone https://github.com/thaonguyenjv/Cloud-Computing.git
-cd Cloud-Computing
-
-# 2. Create & activate virtual environment
-python -m venv venv
-venv\Scripts\activate       # Windows
-source venv/bin/activate    # Mac/Linux
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Create .env file
-SECRET_KEY=your-super-secret-key-here
-DATABASE_URL=postgresql://...
-MAIL_USERNAME=youremail@gmail.com
-MAIL_PASSWORD=your-app-password
-
-# 5. Run
-python run.py
 ```
 
 ---
