@@ -1,7 +1,7 @@
 # 🏪 SaaS Point-of-Sale (PoS) Application
 
 A multi-tenant web-based Point-of-Sale system built with Flask.
-Demo (AWS): http://44.204.225.2
+**🌐 Live Demo (AWS):** `http://pos-g8-alb-900305759.us-east-1.elb.amazonaws.com`
 ---
 
 ## 🛠 Tech Stack
@@ -24,6 +24,7 @@ Demo (AWS): http://44.204.225.2
 - **S3** — Receipt storage 
 - **VPC** — Isolated network 
 - **IAM** — Role-based access control
+- **Application Load Balancer**
 - **CloudWatch** — Monitoring and logs
 
 ---
